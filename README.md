@@ -1,6 +1,6 @@
 # Innotech SAP API
 
-.NET 10 บน Windows x64 ใช้ SAP Business One DI API สำหรับ **Update U_OLDCODE ระดับ head และ U_SO_Ref / U_SO_Line_Ref ทุก line แล้ว Cancel SO ใบเดียวกัน** พร้อม log ใน TEMPINTERFACE
+.NET 10 บน Windows x64 ใช้ SAP Business One DI API สำหรับ **Update U_OLDCODE ระดับ head และ U_SO_Ref / U_SO_Line_Ref ทุก line แล้ว Cancel SO ใบเดียวกัน** พร้อม log ใน TEMPAPI
 
 ## โค้ดหลัก
 
@@ -79,7 +79,7 @@ Status ใช้ Success, Error หรือ Exception Error และตอบ 
 ## Log และลำดับทำงาน
 
 1. JsonConvert.SerializeObject(Head) เก็บ payload ของรายการปัจจุบัน
-2. QuerySql ใช้ INSERT ... OUTPUT INSERTED.Log_ID ลง L_ORDR ก่อนเข้า SAP โดย Log_ID เป็นเลข IDENTITY ที่ SQL สร้างให้แต่ละรายการ
+2. QuerySql ใช้ INSERT ... OUTPUT INSERTED.Log_ID ลง Log_ORDR ก่อนเข้า SAP โดย Log_ID เป็นเลข IDENTITY ที่ SQL สร้างให้แต่ละรายการ
 3. ตรวจ DocEntry จาก payload แล้ว Connect และใช้ GetByKey(DocEntry) โหลด SO
 4. กำหนด oDoc.UserFields.Fields.Item("U_OLDCODE").Value = Head.U_OLDCODE แล้ววนทุก line เพื่อกำหนด oDoc.Lines.UserFields.Fields.Item("U_SO_Ref").Value = Head.U_SO_Ref และ Item("U_SO_Line_Ref").Value = Head.U_SO_Line_Ref ก่อนเรียก Update() ครั้งเดียว
 5. ถ้า Update() สำเร็จจึงเรียก Cancel() บน SO ใบเดียวกัน
@@ -87,9 +87,9 @@ Status ใช้ Success, Error หรือ Exception Error และตอบ 
 
 ไม่มี transaction เพิ่มจากตัวอย่าง ดังนั้นถ้า Update UDF สำเร็จแล้ว Cancel ไม่สำเร็จ ค่า UDF ที่อัปเดตไปจะคงอยู่ หาก INSERT log ไม่สำเร็จจะหยุดก่อน Connect SAP ส่วน ExecuteSql พิมพ์ exception ตามตัวอย่าง จึงไม่มีการยืนยันผล log เพิ่มหรือ rollback เมื่ออัปเดตผล log ไม่สำเร็จ
 
-sql/Create_TEMPINTERFACE.sql เป็นสคริปต์สำหรับสร้างฐานข้อมูลและตารางครั้งแรกผ่าน SSMS โดย API นี้ใช้ L_ORDR ซึ่งมี Log_ID เป็นเลขบันทึกอัตโนมัติ, DocEntry, DocNum_ORDR, F_WebDate, F_SAPDate, F_SAP, F_MESSAGE และ Json
+sql/Create_TEMPAPI.sql เป็นสคริปต์สำหรับสร้างฐานข้อมูลและตารางครั้งแรกผ่าน SSMS โดย API นี้ใช้ Log_ORDR ซึ่งมี Log_ID เป็นเลขบันทึกอัตโนมัติ, DocEntry, DocNum_ORDR, F_WebDate, F_SAPDate, F_SAP, F_MESSAGE และ Json
 
-ถ้ามี TEMPINTERFACE.dbo.L_ORDR เดิมแล้ว ให้รัน sql/Update_TEMPINTERFACE.sql ก่อนใช้ API รุ่นนี้ สคริปต์เพิ่ม Log_ID และ DocEntry พร้อมนำคอลัมน์รหัสเว็บเดิมออก ส่วน Order_ID เดิมถ้ามีจะเก็บไว้เป็นประวัติและ API ใช้ Log_ID สำหรับ log ใหม่ สคริปต์ทั้งสองไม่ถูกรันอัตโนมัติ
+สคริปต์ sql/Create_TEMPAPI.sql สร้างฐานข้อมูล TEMPAPI และตาราง Log_ORDR ตาม DDL ที่ให้มา ให้รันผ่าน SSMS สำหรับฐานข้อมูลใหม่ก่อนเรียก API สคริปต์ไม่ถูกรันอัตโนมัติ
 
 ส่ง SO เดิมหลายครั้งจะได้ Log_ID ใหม่ทุกครั้ง และแต่ละแถวเก็บ payload ของรายการนั้นเอง Response มี SO_DocNum, Status, errCode และ errMsg
 
@@ -98,7 +98,7 @@ sql/Create_TEMPINTERFACE.sql เป็นสคริปต์สำหรับ
 ทุกค่าอยู่ใน src/Innotech.Sap.Api/appsettings.json ไฟล์เดียว และอ่านใหม่เมื่อ restart แอป:
 
 - Sap: การเชื่อมต่อ DI API, Server 192.168.10.207, CompanyDb DB_UAT_2 และ SQL Server 2022 ตามภาพหน้าจอ พร้อมบัญชีที่ให้ไว้
-- ConnectionStrings: มี 2 รายการ คือ DB_UAT_2 ชี้ฐานข้อมูล SAP และ templog ชี้ TEMPINTERFACE สำหรับ log
+- ConnectionStrings: มี 2 รายการ คือ DB_UAT_2 ชี้ฐานข้อมูล SAP และ templog ชี้ TEMPAPI สำหรับ log
 - DIHelper ใช้ TempOrSap.DB_UAT_2 สำหรับฐานข้อมูล SAP และ TempOrSap.templog สำหรับ log โดยชื่อ connection variable คือ constrDB_UAT_2 และ constrtemplog
 - Interface: LogTable
 - Sql: CommandTimeoutSeconds
@@ -114,8 +114,10 @@ Sap:DbServerType ใช้ตัวเลข 17 ซึ่งตรงกับ d
 dotnet build Innotech.Sap.sln -c Release
 dotnet test Innotech.Sap.sln -c Release
 dotnet run --project src/Innotech.Sap.Api
-dotnet publish src/Innotech.Sap.Api -c Release -r win-x64 --self-contained false -o artifacts/publish-example
+dotnet publish src/Innotech.Sap.Api -c Release -p:PublishProfile=IIS
 ```
+
+Publish Profile อยู่ที่ src/Innotech.Sap.Api/Properties/PublishProfiles/IIS.pubxml กำหนด Release, win-x64 และปลายทาง C:\API Publish\SalesOrder โดยไฟล์ publish จะมี web.config สำหรับ IIS, ตัว API, appsettings.json และ sql/Create_TEMPAPI.sql ให้ตั้ง Physical Path ของเว็บไซต์หรือ Application ใน IIS เป็นโฟลเดอร์นี้
 
 เครื่องนี้มี .NET 10 SDK ที่ %LOCALAPPDATA%\Codex\sdks\innotech-dotnet10 ถ้า dotnet ใน PATH ยังเป็นรุ่นก่อนให้เรียก dotnet.exe ในโฟลเดอร์นี้โดยตรง
 

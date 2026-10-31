@@ -29,7 +29,7 @@ public class DIHelper
         NextLogId = 1;
         Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
         {
-            ["Interface:LogTable"] = "L_ORDR"
+            ["Interface:LogTable"] = "Log_ORDR"
         }).Build();
         oCompany = (SAPbobsCOM.Company)SapMockProxy.Wrap(typeof(SAPbobsCOM.Company), Sap);
     }
