@@ -98,9 +98,9 @@ VALUES
                     DIHelper.Connect();
                     SAPbobsCOM.Company oCompany = DIHelper.oCompany;
 
-                    if (Head.U_OLDCODE == null || Head.U_SO_Ref == null || Head.U_SO_Line_Ref == null)
+                    if (Head.U_OLDCODE == null || Head.U_SO_Ref == null || Head.U_So_Line_Ref == null)
                     {
-                        throw new Exception("กรุณาส่ง U_OLDCODE, U_SO_Ref และ U_SO_Line_Ref จาก payload");
+                        throw new Exception("กรุณาส่ง U_OLDCODE, U_SO_Ref และ U_So_Line_Ref จาก payload");
                     }
 
                     SAPbobsCOM.Documents oDoc = (SAPbobsCOM.Documents)oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
@@ -115,7 +115,7 @@ VALUES
                         {
                             oDoc.Lines.SetCurrentLine(i);
                             oDoc.Lines.UserFields.Fields.Item("U_SO_Ref").Value = Head.U_SO_Ref;
-                            oDoc.Lines.UserFields.Fields.Item("U_SO_Line_Ref").Value = Head.U_SO_Line_Ref;
+                            oDoc.Lines.UserFields.Fields.Item("U_So_Line_Ref").Value = Convert.ToInt32(Head.U_So_Line_Ref);
                         }
 
                         int updateRet = oDoc.Update();

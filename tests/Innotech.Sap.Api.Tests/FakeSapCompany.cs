@@ -16,13 +16,13 @@ public class FakeLine
 {
     public int LineNum { get; set; }
     public string U_SO_Ref { get; set; } = "OLD_REF";
-    public string U_SO_Line_Ref { get; set; } = "OLD_LINE";
+    public int U_So_Line_Ref { get; set; } = -1;
 
     public FakeLine Copy() => new()
     {
         LineNum = LineNum,
         U_SO_Ref = U_SO_Ref,
-        U_SO_Line_Ref = U_SO_Line_Ref
+        U_So_Line_Ref = U_So_Line_Ref
     };
 }
 
@@ -146,7 +146,7 @@ public class FakeFields(FakeLine line)
 {
     public FakeField Item(string name)
     {
-        if (name != "U_SO_Ref" && name != "U_SO_Line_Ref") throw new InvalidOperationException("Unknown UDF.");
+        if (name != "U_SO_Ref" && name != "U_So_Line_Ref") throw new InvalidOperationException("Unknown UDF.");
         return new FakeField(line, name);
     }
 }
@@ -155,11 +155,21 @@ public class FakeField(FakeLine line, string name)
 {
     public object Value
     {
-        get => name == "U_SO_Ref" ? line.U_SO_Ref : line.U_SO_Line_Ref;
+        get => name == "U_SO_Ref" ? line.U_SO_Ref : line.U_So_Line_Ref;
         set
         {
-            if (name == "U_SO_Ref") line.U_SO_Ref = (string)value;
-            else line.U_SO_Line_Ref = (string)value;
+            if (name == "U_SO_Ref")
+            {
+                if (value is not string text || text.Length > 20)
+                    throw new System.Runtime.InteropServices.COMException("Illegal value entered", -2055);
+                line.U_SO_Ref = text;
+            }
+            else
+            {
+                if (value is not int number || number < short.MinValue || number > short.MaxValue)
+                    throw new System.Runtime.InteropServices.COMException("Illegal value entered", -2055);
+                line.U_So_Line_Ref = number;
+            }
         }
     }
 }

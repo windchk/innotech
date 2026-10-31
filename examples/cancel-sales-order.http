@@ -4,6 +4,7 @@
 GET {{baseUrl}}/API/TestConnectSAP
 
 ### Update header U_OLDCODE and both UDFs on EVERY line, then cancel the SAME SO
+# U_SO_Ref is Text (20 characters); U_So_Line_Ref is a smallint JSON number.
 # All three UDF values come from the payload. No Lines or LineNum needed.
 POST {{baseUrl}}/API/SalesOrder/Cancel
 Content-Type: application/json
@@ -13,7 +14,7 @@ Content-Type: application/json
     "DocEntry": 1234,
     "U_OLDCODE": "OLD-SO-001",
     "U_SO_Ref": "SO-REF-001",
-    "U_SO_Line_Ref": "5"
+    "U_So_Line_Ref": 5
   }
 ]
 
@@ -26,11 +27,11 @@ Content-Type: application/json
     "DocEntry": 5678,
     "U_OLDCODE": "OLD-SO-002",
     "U_SO_Ref": "26000100",
-    "U_SO_Line_Ref": "0"
+    "U_So_Line_Ref": 0
   }
 ]
 
-### Clear U_OLDCODE at the header and both Text UDFs on every line
+### Set empty Text values and numeric U_So_Line_Ref = 0 on every line
 POST {{baseUrl}}/API/SalesOrder/Cancel
 Content-Type: application/json
 
@@ -39,6 +40,6 @@ Content-Type: application/json
     "DocEntry": 1234,
     "U_OLDCODE": "",
     "U_SO_Ref": "",
-    "U_SO_Line_Ref": ""
+    "U_So_Line_Ref": 0
   }
 ]

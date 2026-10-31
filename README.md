@@ -1,6 +1,6 @@
 # Innotech SAP API
 
-.NET 10 บน Windows x64 ใช้ SAP Business One DI API สำหรับ **Update U_OLDCODE ระดับ head และ U_SO_Ref / U_SO_Line_Ref ทุก line แล้ว Cancel SO ใบเดียวกัน** พร้อม log ใน TEMPAPI
+.NET 10 บน Windows x64 ใช้ SAP Business One DI API สำหรับ **Update U_OLDCODE ระดับ head และ U_SO_Ref / U_So_Line_Ref ทุก line แล้ว Cancel SO ใบเดียวกัน** พร้อม log ใน TEMPAPI
 
 ## โค้ดหลัก
 
@@ -46,18 +46,22 @@ POST /API/SalesOrder/Cancel — Content-Type: application/json — ไม่ใ�
     "DocEntry": 1234,
     "U_OLDCODE": "OLD-SO-001",
     "U_SO_Ref": "SO-REF-001",
-    "U_SO_Line_Ref": "5"
+    "U_So_Line_Ref": 5
   }
 ]
 ```
 
-DocEntry คือ SO ที่จะ Update UDF แล้ว Cancel ใบเดียวกัน โดย U_OLDCODE อัปเดตที่ head ส่วน U_SO_Ref และ U_SO_Line_Ref ใช้ค่าสองค่าจาก payload อัปเดตทุก line ไม่ต้องส่ง Lines หรือ LineNum
+DocEntry คือ SO ที่จะ Update UDF แล้ว Cancel ใบเดียวกัน โดย U_OLDCODE อัปเดตที่ head ส่วน U_SO_Ref และ U_So_Line_Ref ใช้ค่าสองค่าจาก payload อัปเดตทุก line ไม่ต้องส่ง Lines หรือ LineNum
 
 รับเลข SO จาก DocEntry ใน payload เท่านั้น และต้องมากกว่า 0 ส่วน DocNum อ่านจากเอกสารใน SAP เพื่อแสดง SO_DocNum ใน response และเก็บ DocNum_ORDR ใน log
 
-รับ U_OLDCODE, U_SO_Ref และ U_SO_Line_Ref เป็นข้อความจาก payload โดยตรง ทุก line ใช้ U_SO_Ref และ U_SO_Line_Ref ค่าเดียวกันตามที่ส่งมา ส่งข้อความว่าง "" เพื่อล้างค่าได้ และข้อความอย่าง "005" จะคงเลขศูนย์นำหน้า
+รับค่าจาก payload โดยตรง: U_OLDCODE เป็นข้อความที่ head, U_SO_Ref เป็นข้อความยาวไม่เกิน 20 ตัวอักษร และ U_So_Line_Ref เป็นเลขจำนวนเต็มชนิด smallint ช่วง -32768 ถึง 32767 ตาม schema ที่ส่งมา ทุก line ใช้ค่า U_SO_Ref และ U_So_Line_Ref เดียวกันตาม payload
+
+ส่ง U_So_Line_Ref เป็น JSON number เช่น 0 หรือ 5 โดยไม่ใส่เครื่องหมายคำพูด ค่า "TEST-001" และข้อความว่าง "" ใช้เป็นค่าตัวเลขไม่ได้ ถ้าต้องการตั้งเป็นศูนย์ให้ส่ง 0 อย่างชัดเจน ส่วน U_OLDCODE และ U_SO_Ref ส่งข้อความว่างได้ และข้อความอย่าง "005" ในช่องข้อความจะคงเลขศูนย์นำหน้า
 
 ต้องส่ง UDF ทั้งสามค่า ถ้าขาดค่าหรือส่ง null จะหยุดก่อน Update/Cancel โค้ดวนทุก line ที่อยู่ใน SO ด้วย SetCurrentLine(i) และไม่เลือก line จาก payload
+
+ถ้า U_So_Line_Ref ไม่ใช่เลขจำนวนเต็มหรือเกินช่วง smallint หรือ U_SO_Ref ยาวเกิน 20 ตัวอักษร ASP.NET จะตอบ HTTP 400 พร้อม errors ระบุชื่อ field ก่อนเข้า action จึงไม่เชื่อม SAP และไม่สร้าง log ของ action สำหรับ payload ที่ผิดชนิด
 
 ตัวอย่าง payload ที่ใช้ DocEntry อยู่ใน examples/cancel-sales-order.http
 
@@ -81,7 +85,7 @@ Status ใช้ Success, Error หรือ Exception Error และตอบ 
 1. JsonConvert.SerializeObject(Head) เก็บ payload ของรายการปัจจุบัน
 2. QuerySql ใช้ INSERT ... OUTPUT INSERTED.Log_ID ลง Log_ORDR ก่อนเข้า SAP โดย Log_ID เป็นเลข IDENTITY ที่ SQL สร้างให้แต่ละรายการ
 3. ตรวจ DocEntry จาก payload แล้ว Connect และใช้ GetByKey(DocEntry) โหลด SO
-4. กำหนด oDoc.UserFields.Fields.Item("U_OLDCODE").Value = Head.U_OLDCODE แล้ววนทุก line เพื่อกำหนด oDoc.Lines.UserFields.Fields.Item("U_SO_Ref").Value = Head.U_SO_Ref และ Item("U_SO_Line_Ref").Value = Head.U_SO_Line_Ref ก่อนเรียก Update() ครั้งเดียว
+4. กำหนด oDoc.UserFields.Fields.Item("U_OLDCODE").Value = Head.U_OLDCODE แล้ววนทุก line เพื่อกำหนด oDoc.Lines.UserFields.Fields.Item("U_SO_Ref").Value = Head.U_SO_Ref และ Item("U_So_Line_Ref").Value = Convert.ToInt32(Head.U_So_Line_Ref) ก่อนเรียก Update() ครั้งเดียว
 5. ถ้า Update() สำเร็จจึงเรียก Cancel() บน SO ใบเดียวกัน
 6. สร้าง response และ ExecuteSql UPDATE ผล log เป็น F_SAP = Y หรือ N โดยใช้ Where Log_ID พร้อมบันทึก DocEntry และ DocNum_ORDR ที่ได้จาก SAP
 
@@ -121,4 +125,6 @@ Publish Profile อยู่ที่ src/Innotech.Sap.Api/Properties/PublishPro
 
 เครื่องนี้มี .NET 10 SDK ที่ %LOCALAPPDATA%\Codex\sdks\innotech-dotnet10 ถ้า dotnet ใน PATH ยังเป็นรุ่นก่อนให้เรียก dotnet.exe ในโฟลเดอร์นี้โดยตรง
 
-ชุดทดสอบ 30 กรณี compile Controller และ model จาก source จริง โดยใช้ DIHelper จำลองเฉพาะในโปรเจกต์ test ไม่มี test hook ใน source ของแอป ตรวจการรับ DocEntry เท่านั้น, อ่าน DocNum จาก SAP, การอัปเดต U_OLDCODE ที่ head และ UDF ทั้งสองช่องทุก line ก่อน Cancel SO ใบเดียวกัน, เลข line ไม่ต่อเนื่อง, ค่าว่าง/เลขศูนย์นำหน้า, payload ไม่ครบ, Update/Cancel error, response 4 ช่อง, Log_ID แยกแต่ละรายการ, INSERT log ไม่สำเร็จ, การส่ง SO เดิมซ้ำ และ TestConnectSAP ยังไม่ได้ทดสอบการทำรายการบน SAP จริงหรือรันสคริปต์สร้าง/ปรับฐานข้อมูล
+ชุดทดสอบ 39 กรณี compile Controller และ model จาก source จริง โดยใช้ DIHelper จำลองเฉพาะในโปรเจกต์ test ไม่มี test hook ใน source ของแอป ตรวจการรับ DocEntry เท่านั้น, อ่าน DocNum จาก SAP, การอัปเดต U_OLDCODE ที่ head และ UDF ทั้งสองช่องทุก line ก่อน Cancel SO ใบเดียวกัน, เลข line ไม่ต่อเนื่อง, payload ไม่ครบ, Update/Cancel error, response 4 ช่อง, Log_ID แยกแต่ละรายการ, INSERT log ไม่สำเร็จ, การส่ง SO เดิมซ้ำ และ TestConnectSAP
+
+HTTP tests ใช้ TestServer ในหน่วยความจำกับ MVC/Newtonsoft และ source Controller จริง ตรวจ payload "TEST-001" ใน U_So_Line_Ref ให้ตอบ 400, ค่าเกินช่วง/ทศนิยม/boolean, ขอบเขต smallint และ U_SO_Ref ยาว 20/21 ตัวอักษร SDK จำลองตรวจว่า U_So_Line_Ref ถูกส่งเป็น integer การทดสอบไม่เรียก SAP หรือฐานข้อมูลจริง

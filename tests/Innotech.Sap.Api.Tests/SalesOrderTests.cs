@@ -17,7 +17,7 @@ public class SalesOrderTests
         DocEntry = 1,
         U_OLDCODE = "OLD-CODE-PAYLOAD",
         U_SO_Ref = "PAYLOAD-REF",
-        U_SO_Line_Ref = "17"
+        U_So_Line_Ref = 17
     };
 
     private static List<ORDR_Response> Run(params Sales_Order[] requests)
@@ -88,7 +88,7 @@ public class SalesOrderTests
         Assert.All(DIHelper.Sap.Orders[1].Lines, line =>
         {
             Assert.Equal(request.U_SO_Ref, line.U_SO_Ref);
-            Assert.Equal(request.U_SO_Line_Ref, line.U_SO_Line_Ref);
+            Assert.Equal(17, line.U_So_Line_Ref);
         });
         Assert.True(DIHelper.Sap.Orders[1].Cancelled);
         Assert.Equal(new[] { "log-insert", "connect", "get:1", "update:1", "cancel:1", "log-update" }, DIHelper.Sap.Events);
@@ -105,7 +105,7 @@ public class SalesOrderTests
         var logged = JArray.Parse(log.Json)[0];
         Assert.Equal(request.U_OLDCODE, logged["U_OLDCODE"].Value<string>());
         Assert.Equal(request.U_SO_Ref, logged["U_SO_Ref"].Value<string>());
-        Assert.Equal(request.U_SO_Line_Ref, logged["U_SO_Line_Ref"].Value<string>());
+        Assert.Equal(request.U_So_Line_Ref, logged["U_So_Line_Ref"].Value<short?>());
         Assert.Null(logged["Lines"]);
         Assert.Null(logged["LineNum"]);
         Assert.Null(logged["U_Web_Entry"]);
@@ -160,39 +160,39 @@ public class SalesOrderTests
         Assert.All(DIHelper.Sap.Orders[1].Lines, line =>
         {
             Assert.Equal(request.U_SO_Ref, line.U_SO_Ref);
-            Assert.Equal(request.U_SO_Line_Ref, line.U_SO_Line_Ref);
+            Assert.Equal(17, line.U_So_Line_Ref);
         });
         Assert.Equal(new[] { 0, 7, 15 }, DIHelper.Sap.Orders[1].Lines.Select(line => line.LineNum));
     }
 
     [Theory]
-    [InlineData("", "", "")]
-    [InlineData("0", "0", "0")]
-    [InlineData("00042", "007", "000OLD")]
-    public void Uses_all_three_text_values_exactly_from_payload(string reference, string lineReference, string oldCode)
+    [InlineData("", 0, "")]
+    [InlineData("0", 0, "0")]
+    [InlineData("00042", 7, "000OLD")]
+    public void Uses_text_and_numeric_values_from_payload(string reference, short lineReference, string oldCode)
     {
         var request = Request();
         request.U_SO_Ref = reference;
-        request.U_SO_Line_Ref = lineReference;
+        request.U_So_Line_Ref = lineReference;
         request.U_OLDCODE = oldCode;
         Assert.Equal("Success", Assert.Single(Run(request)).Status);
         Assert.Equal(oldCode, DIHelper.Sap.Orders[1].HeaderValue);
         Assert.All(DIHelper.Sap.Orders[1].Lines, line =>
         {
             Assert.Equal(reference, line.U_SO_Ref);
-            Assert.Equal(lineReference, line.U_SO_Line_Ref);
+            Assert.Equal((int)lineReference, line.U_So_Line_Ref);
         });
     }
 
     [Theory]
     [InlineData("{}")]
-    [InlineData("{\"U_SO_Ref\":\"REF\",\"U_SO_Line_Ref\":\"5\"}")]
-    [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_SO_Line_Ref\":\"5\"}")]
+    [InlineData("{\"U_SO_Ref\":\"REF\",\"U_So_Line_Ref\":\"5\"}")]
+    [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_So_Line_Ref\":\"5\"}")]
     [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_SO_Ref\":\"REF\"}")]
-    [InlineData("{\"U_OLDCODE\":null,\"U_SO_Ref\":\"REF\",\"U_SO_Line_Ref\":\"5\"}")]
-    [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_SO_Ref\":null,\"U_SO_Line_Ref\":\"5\"}")]
-    [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_SO_Ref\":\"REF\",\"U_SO_Line_Ref\":null}")]
-    [InlineData("{\"Lines\":[{\"LineNum\":0,\"U_SO_Ref\":\"REF\",\"U_SO_Line_Ref\":\"5\"}]}")]
+    [InlineData("{\"U_OLDCODE\":null,\"U_SO_Ref\":\"REF\",\"U_So_Line_Ref\":\"5\"}")]
+    [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_SO_Ref\":null,\"U_So_Line_Ref\":\"5\"}")]
+    [InlineData("{\"U_OLDCODE\":\"OLD\",\"U_SO_Ref\":\"REF\",\"U_So_Line_Ref\":null}")]
+    [InlineData("{\"Lines\":[{\"LineNum\":0,\"U_SO_Ref\":\"REF\",\"U_So_Line_Ref\":\"5\"}]}")]
     public void Missing_udf_values_never_update_or_cancel(string fieldsJson)
     {
         var payload = JObject.Parse(fieldsJson);
@@ -220,7 +220,7 @@ public class SalesOrderTests
         Assert.All(DIHelper.Sap.Orders[1].Lines, line =>
         {
             Assert.Equal("OLD_REF", line.U_SO_Ref);
-            Assert.Equal("OLD_LINE", line.U_SO_Line_Ref);
+            Assert.Equal(-1, line.U_So_Line_Ref);
         });
         Assert.DoesNotContain("cancel:1", DIHelper.Sap.Events);
         Assert.Equal("N", Assert.Single(DIHelper.Logs).State);
@@ -238,7 +238,7 @@ public class SalesOrderTests
         Assert.All(DIHelper.Sap.Orders[1].Lines, line =>
         {
             Assert.Equal(request.U_SO_Ref, line.U_SO_Ref);
-            Assert.Equal(request.U_SO_Line_Ref, line.U_SO_Line_Ref);
+            Assert.Equal(17, line.U_So_Line_Ref);
         });
         Assert.False(DIHelper.Sap.Orders[1].Cancelled);
         Assert.Equal("N", Assert.Single(DIHelper.Logs).State);
@@ -284,13 +284,13 @@ public class SalesOrderTests
         var request = Request();
         request.U_OLDCODE = "เก่า'O'Brien";
         request.U_SO_Ref = "O'Brien ไทย";
-        request.U_SO_Line_Ref = "บรรทัด'17";
+        request.U_So_Line_Ref = 17;
         Assert.Equal("Success", Assert.Single(Run(request)).Status);
         var log = Assert.Single(DIHelper.Logs);
         var logged = JArray.Parse(log.Json)[0];
         Assert.Equal(request.U_OLDCODE, logged["U_OLDCODE"].Value<string>());
         Assert.Equal(request.U_SO_Ref, logged["U_SO_Ref"].Value<string>());
-        Assert.Equal(request.U_SO_Line_Ref, logged["U_SO_Line_Ref"].Value<string>());
+        Assert.Equal(request.U_So_Line_Ref, logged["U_So_Line_Ref"].Value<short?>());
         Assert.Contains("O''Brien", DIHelper.Statements[0]);
     }
 
