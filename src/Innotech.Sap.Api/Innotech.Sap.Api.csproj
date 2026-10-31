@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.14" />
+    <Content Include="..\..\sql\Create_TEMPINTERFACE.sql" Link="sql\Create_TEMPINTERFACE.sql" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\sql\Update_TEMPINTERFACE.sql" Link="sql\Update_TEMPINTERFACE.sql" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Interop.SAPbobsCOM">
+      <HintPath>..\..\lib\Interop.SAPbobsCOM.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.14" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="../../src/Innotech.Sap.Api/Controllers/ORDRController.cs" Link="Source/ORDRController.cs" />
+    <Compile Include="../../src/Innotech.Sap.Api/Models/ORDR.cs" Link="Source/ORDR.cs" />
+    <Compile Include="../../src/Innotech.Sap.Api/Models/JSON_Response.cs" Link="Source/JSON_Response.cs" />
+    <Using Include="Xunit" />
+    <Using Include="Innotech.Sap.Api.Models.ORDR" Static="True" />
+    <Using Include="Innotech.Sap.Api.Models.JSON_Response" Static="True" />
+    <Reference Include="Interop.SAPbobsCOM">
+      <HintPath>..\..\lib\Interop.SAPbobsCOM.dll</HintPath>
+      <EmbedInteropTypes>false</EmbedInteropTypes>
+    </Reference>
+  </ItemGroup>
+</Project>

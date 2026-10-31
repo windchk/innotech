@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Innotech.Sap.Api": {
+      "commandName": "Project"
+    }
+  }
+}
