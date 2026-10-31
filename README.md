@@ -123,6 +123,10 @@ dotnet publish src/Innotech.Sap.Api -c Release -p:PublishProfile=IIS
 
 Publish Profile อยู่ที่ src/Innotech.Sap.Api/Properties/PublishProfiles/IIS.pubxml กำหนด Release, win-x64 และปลายทาง C:\API Publish\SalesOrder โดยไฟล์ publish จะมี web.config สำหรับ IIS, ตัว API, appsettings.json และ sql/Create_TEMPAPI.sql ให้ตั้ง Physical Path ของเว็บไซต์หรือ Application ใน IIS เป็นโฟลเดอร์นี้
 
+ให้ publish จากโปรเจกต์ src/Innotech.Sap.Api โดยตรงตามคำสั่งด้านบน ชุดที่นำขึ้น IIS ต้องมี Innotech.Sap.Api.exe, Innotech.Sap.Api.dll, appsettings.json และ web.config ถ้ามีแต่ Innotech.Sap.Api.Tests.dll กับ testhost.exe แสดงว่าเป็นชุดทดสอบ ไม่ใช่ตัว API
+
+เครื่อง IIS ต้องติดตั้ง [.NET 10 Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) เพื่อให้มี ASP.NET Core Runtime และ AspNetCoreModuleV2 ตั้ง Application Pool เป็น No Managed Code และ Enable 32-Bit Applications = False สำหรับชุด win-x64 นี้ แล้วทดสอบ GET /API/TestConnectSAP โดยใช้ IP และพอร์ตของเครื่อง IIS ส่วน Sap:Server และ SQL connection strings ใช้ IP ของ SAP/SQL ซึ่งอาจเป็นคนละเครื่องกัน
+
 เครื่องนี้มี .NET 10 SDK ที่ %LOCALAPPDATA%\Codex\sdks\innotech-dotnet10 ถ้า dotnet ใน PATH ยังเป็นรุ่นก่อนให้เรียก dotnet.exe ในโฟลเดอร์นี้โดยตรง
 
 ชุดทดสอบ 39 กรณี compile Controller และ model จาก source จริง โดยใช้ DIHelper จำลองเฉพาะในโปรเจกต์ test ไม่มี test hook ใน source ของแอป ตรวจการรับ DocEntry เท่านั้น, อ่าน DocNum จาก SAP, การอัปเดต U_OLDCODE ที่ head และ UDF ทั้งสองช่องทุก line ก่อน Cancel SO ใบเดียวกัน, เลข line ไม่ต่อเนื่อง, payload ไม่ครบ, Update/Cancel error, response 4 ช่อง, Log_ID แยกแต่ละรายการ, INSERT log ไม่สำเร็จ, การส่ง SO เดิมซ้ำ และ TestConnectSAP
